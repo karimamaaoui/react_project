@@ -31,7 +31,9 @@ let CommentService = class CommentService {
         return comment.save();
     }
     async getCommentsByPost(postId) {
-        return this.commentModel.find({ postId }).exec();
+        return this.commentModel.find({ postId })
+            .populate('author', 'firstname lastname profilePicture')
+            .exec();
     }
     async deleteComment(commentId) {
         await this.commentModel.findByIdAndDelete(commentId);

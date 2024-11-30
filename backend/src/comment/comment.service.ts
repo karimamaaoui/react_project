@@ -23,7 +23,9 @@ export class CommentService {
   }
   // Récupérer tous les commentaires d'un post
   async getCommentsByPost(postId: string): Promise<Comment[]> {
-    return this.commentModel.find({ postId }).exec();
+    return this.commentModel.find({ postId })
+    .populate('author', 'firstname lastname profilePicture')
+    .exec();
   }
 
   // Supprimer un commentaire
