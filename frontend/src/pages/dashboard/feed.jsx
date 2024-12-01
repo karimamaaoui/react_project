@@ -8,10 +8,10 @@ export default function Feed({posts, profile,fetchPosts }) {
     <Box sx={{ flex: 5.5 }}>
       <Paper sx={{ padding: 2 }}>
         <Share fetchPosts={fetchPosts} profile={profile}/>
-        {posts.map((p) => {
+        {posts.map((p,index) => {
           const author = profile;
 
-          return <Post key={p.id} post={p} profile={profile} authorName={author ? author.firstname : "Unknown name"} />;
+          return <Post key={index} post={p} profile={profile} authorName={author ? author.firstname : "Unknown name"} />;
         })}
       </Paper>
     </Box>

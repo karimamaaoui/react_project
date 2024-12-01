@@ -13,6 +13,7 @@ import {
   TextField,
   Modal,
   Button,
+  useMediaQuery,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -23,13 +24,17 @@ import { AuthContext } from '../../context/AuthContext';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
+import CloseIcon from '@mui/icons-material/Close';
+
 const PostList = ({ posts, loading, users }) => {
   const [commentsByPost, setCommentsByPost] = useState({});
-  const [commentInput, setCommentInput] = useState({}); // Track comment input for each post
+  const [commentInput, setCommentInput] = useState({});
   const [cookies] = useCookies(['jwt']);
   const { auth } = useContext(AuthContext);
-  const [openCommentModal, setOpenCommentModal] = useState(false); // Modal state
-  const [selectedPost, setSelectedPost] = useState(null); // Track the selected post for modal
+  const [openCommentModal, setOpenCommentModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  const isSmallScreen = useMediaQuery('(max-width:600px)');
 
   const getAuthorDetails = (authorId) => {
     return users.find((user) => user._id === authorId);
@@ -69,22 +74,30 @@ const PostList = ({ posts, loading, users }) => {
         { content },
         { withCredentials: true },
       );
+      
+
       setCommentsByPost((prev) => ({
         ...prev,
         [postId]: [...(prev[postId] || []), response.data],
       }));
       setCommentInput((prev) => ({
         ...prev,
-        [postId]: '', // Clear input after submission
+        [postId]: '',
       }));
+      await fetchComments(postId);
     } catch (error) {
       console.error('Error posting comment:', error);
     }
   };
 
   const handleOpenModal = (post) => {
-    setSelectedPost(post);
-    setOpenCommentModal(true);
+      setSelectedPost(post);
+    
+      if (!commentsByPost[post._id]) {
+        fetchComments(post._id);
+      }
+      setOpenCommentModal(true);
+    
   };
 
   const handleCloseModal = () => {
@@ -200,12 +213,14 @@ const PostList = ({ posts, loading, users }) => {
                       Comments:
                     </Typography>
                     <Box>
-                      {postComments.slice(0, 2).map((comment, idx) => {
+                      {postComments.slice(0, 1).map((comment, idx) => {
                         const createdAtComment = comment.createdAt
                           ? new Date(comment.createdAt)
                           : null;
                         const relativeTimeComment = createdAtComment
-                          ? formatDistanceToNow(createdAtComment, { addSuffix: true })
+                          ? formatDistanceToNow(createdAtComment, {
+                              addSuffix: true,
+                            })
                           : '';
 
                         const author = comment.author;
@@ -225,7 +240,9 @@ const PostList = ({ posts, loading, users }) => {
                                   ? `${author.firstname} ${author.lastname}`
                                   : 'Unknown Author'
                               }
-                              src={author?.profilePicture || 'default-image-url'}
+                              src={
+                                author?.profilePicture || 'default-image-url'
+                              }
                               sx={{ width: 36, height: 36 }}
                             />
                             <Box>
@@ -237,30 +254,16 @@ const PostList = ({ posts, loading, users }) => {
                                   ? `${author.firstname} ${author.lastname}`
                                   : 'Unknown Author'}
                               </Typography>
-                              <Typography
-                                variant="body2"
-                                color="textSecondary"
-                              >
+                              <Typography variant="body2" color="textSecondary">
                                 {relativeTimeComment}
                               </Typography>
-                              <Typography
-                                variant="body1"
-                                sx={{ marginTop: 1 }}
-                              >
+                              <Typography variant="body1" sx={{ marginTop: 1 }}>
                                 {comment.content}
                               </Typography>
                             </Box>
                           </Box>
                         );
                       })}
-                      {postComments.length > 2 && (
-                        <Button
-                          onClick={() => handleOpenModal(post)}
-                          color="primary"
-                        >
-                          Show More
-                        </Button>
-                      )}
                     </Box>
 
                     <Divider sx={{ my: 2 }} />
@@ -274,8 +277,15 @@ const PostList = ({ posts, loading, users }) => {
                           <ShareIcon />
                         </IconButton>
                       </Box>
-                      <Typography variant="caption" color="textSecondary">
-                        {`${post.likes || 0} likes • ${postComments.length || 0} comments`}
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => handleOpenModal(post)}
+                      >
+                        {`${post.likes || 0} likes • ${
+                          postComments.length || 0
+                        } comments`}
                       </Typography>
                     </CardActions>
 
@@ -316,76 +326,40 @@ const PostList = ({ posts, loading, users }) => {
       </Box>
 
       {/* Modal to show all comments */}
-      <Modal
-        open={openCommentModal}
-        onClose={handleCloseModal}
-        aria-labelledby="comments-modal-title"
-        aria-describedby="comments-modal-description"
-      >
+      <Modal open={openCommentModal} onClose={handleCloseModal}>
         <Box
           sx={{
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
+            width: isSmallScreen ? '90%' : '60%',
             bgcolor: 'background.paper',
-            boxShadow: 24,
             p: 4,
-            width: '80%',
-            maxHeight: '80%',
-            overflowY: 'auto',
             borderRadius: 2,
           }}
         >
-          <Typography variant="h6" id="comments-modal-title">
-            Comments
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="h6">Comments</Typography>
+            <IconButton onClick={handleCloseModal}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
           <Divider sx={{ my: 2 }} />
-          <Box>
+          <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
             {selectedPost &&
-              commentsByPost[selectedPost._id]?.map((comment, idx) => {
-                const createdAtComment = comment.createdAt
-                  ? new Date(comment.createdAt)
-                  : null;
-                const relativeTimeComment = createdAtComment
-                  ? formatDistanceToNow(createdAtComment, { addSuffix: true })
-                  : '';
-
-                return (
-                  <Box
-                    key={idx}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      marginBottom: 2,
-                      gap: 2,
-                    }}
-                  >
-                    <Avatar
-                      alt={
-                        comment.author
-                          ? `${comment.author.firstname} ${comment.author.lastname}`
-                          : 'Unknown Author'
-                      }
-                      src={comment.author?.profilePicture || 'default-image-url'}
-                      sx={{ width: 36, height: 36 }}
-                    />
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                        {comment.author
-                          ? `${comment.author.firstname} ${comment.author.lastname}`
-                          : 'Unknown Author'}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {relativeTimeComment}
-                      </Typography>
-                      <Typography variant="body1" sx={{ marginTop: 1 }}>
-                        {comment.content}
-                      </Typography>
-                    </Box>
+              commentsByPost[selectedPost._id]?.map((comment, idx) => (
+                <Box key={idx} sx={{ display: 'flex', marginBottom: 2 }}>
+                  <Avatar src={comment.author?.profilePicture} />
+                  <Box ml={2}>
+                    <Typography variant="subtitle2">{`${comment.author.firstname} ${comment.author.lastname}`}</Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {formatDistanceToNow(new Date(comment.createdAt))}
+                    </Typography>
+                    <Typography>{comment.content}</Typography>
                   </Box>
-                );
-              })}
+                </Box>
+              ))}
           </Box>
         </Box>
       </Modal>
