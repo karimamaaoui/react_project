@@ -9,28 +9,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateCommentDto = void 0;
+exports.CreateLikeDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-class CreateCommentDto {
+class CreateLikeDto {
 }
-exports.CreateCommentDto = CreateCommentDto;
+exports.CreateLikeDto = CreateLikeDto;
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'The ID of the post' }),
     (0, class_validator_1.IsMongoId)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateCommentDto.prototype, "postId", void 0);
+], CreateLikeDto.prototype, "postId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'The ID of the author' }),
+    (0, swagger_1.ApiProperty)({ description: 'The ID of the user' }),
     (0, class_validator_1.IsMongoId)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateCommentDto.prototype, "author", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Content of the comment' }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], CreateCommentDto.prototype, "content", void 0);
-//# sourceMappingURL=create-comment.dto.js.map
+], CreateLikeDto.prototype, "author", void 0);
+//# sourceMappingURL=create-like.dto.js.map

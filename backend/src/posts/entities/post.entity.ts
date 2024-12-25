@@ -30,6 +30,10 @@ export class Post extends Document {
   @Prop({ type: [String] })
   @ApiProperty()
   comments: string[];
+
+  @Prop({ default: false })
+  @ApiProperty()
+  isLiked: boolean;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

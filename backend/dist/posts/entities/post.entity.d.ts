@@ -6,6 +6,7 @@ export declare class Post extends Document {
     image?: string;
     likes: number;
     comments: string[];
+    isLiked: boolean;
 }
 export declare const PostSchema: import("mongoose").Schema<Post, import("mongoose").Model<Post, any, any, any, Document<unknown, any, Post> & Post & Required<{
     _id: unknown;

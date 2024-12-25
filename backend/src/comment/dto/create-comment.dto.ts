@@ -8,7 +8,7 @@ export class CreateCommentDto {
   @IsNotEmpty()
   postId: string;
 
-  @ApiProperty({ description: 'The ID of the author/user' })
+  @ApiProperty({ description: 'The ID of the author' })
   @IsMongoId()
   @IsNotEmpty()
   author: string;

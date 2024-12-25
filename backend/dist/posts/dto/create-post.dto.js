@@ -37,4 +37,8 @@ __decorate([
     (0, swagger_1.ApiProperty)(),
     __metadata("design:type", String)
 ], CreatePostDto.prototype, "image", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Boolean)
+], CreatePostDto.prototype, "isLiked", void 0);
 //# sourceMappingURL=create-post.dto.js.map

@@ -9,6 +9,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { CommentModule } from './comment/comment.module';
+import { LikeModule } from './like/like.module';
 
 
 @Module({
@@ -24,7 +25,8 @@ import { CommentModule } from './comment/comment.module';
     }),
     AuthModule,
     PostsModule,
-    CommentModule,    
+    CommentModule,
+    LikeModule,    
   ],
   controllers: [AppController],
   providers: [AppService],

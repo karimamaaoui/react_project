@@ -46,6 +46,11 @@ __decorate([
     (0, swagger_1.ApiProperty)(),
     __metadata("design:type", Array)
 ], Post.prototype, "comments", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Boolean)
+], Post.prototype, "isLiked", void 0);
 exports.Post = Post = __decorate([
     (0, mongoose_1.Schema)({
         timestamps: true

@@ -20,4 +20,7 @@ export class CreatePostDto {
   @ApiProperty()
   image?: string;
 
+  @ApiProperty()
+  isLiked: boolean;
+
 }
