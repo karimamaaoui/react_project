@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
 function ProfileEdit() {
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
