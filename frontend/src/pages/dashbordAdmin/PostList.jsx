@@ -33,6 +33,7 @@ const PostList = ({ posts, loading, users }) => {
   const { auth } = useContext(AuthContext);
   const [openCommentModal, setOpenCommentModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [likeByPost, setLikeByPost] = useState({});
 
   const isSmallScreen = useMediaQuery('(max-width:600px)');
 
@@ -57,6 +58,58 @@ const PostList = ({ posts, loading, users }) => {
     }
   };
 
+  const fetchLikes = async (postId) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/likes/${postId}`, { withCredentials: true });
+
+      setLikeByPost((prev) => ({
+        ...prev,
+        [postId]: 
+          response.data,
+        
+
+      }
+    )
+  );
+    } catch (error) {
+      console.error('Error fetching likes:', error);
+    }
+  };
+  
+  const handleLikeToggle = async (postId) => {
+    try {
+      // Check if the post is already liked by the user
+      const isLiked = likeByPost[postId]?.liked;
+  
+      // If liked, remove the like, otherwise add it
+      if (isLiked) {
+        await axios.delete(`http://localhost:8000/likes/remove/${postId}`, {
+          withCredentials: true,
+        });
+      } else {
+        await axios.post(
+          `http://localhost:8000/likes/add/${postId}`,
+          {},
+          { withCredentials: true }
+        );
+      }
+  
+      // After the like action, update the local state
+      setLikeByPost((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          liked: !isLiked, // Toggle the like status
+        },
+      }));
+  
+      // Fetch updated likes after toggling
+      fetchLikes(postId);
+    } catch (error) {
+      console.error('Error toggling like:', error.response?.data || error.message);
+    }
+  };
+  
   const handleCommentChange = (postId, value) => {
     setCommentInput((prev) => ({
       ...prev,
@@ -74,8 +127,6 @@ const PostList = ({ posts, loading, users }) => {
         { content },
         { withCredentials: true },
       );
-      
-
       setCommentsByPost((prev) => ({
         ...prev,
         [postId]: [...(prev[postId] || []), response.data],
@@ -91,13 +142,11 @@ const PostList = ({ posts, loading, users }) => {
   };
 
   const handleOpenModal = (post) => {
-      setSelectedPost(post);
-    
-      if (!commentsByPost[post._id]) {
-        fetchComments(post._id);
-      }
-      setOpenCommentModal(true);
-    
+    setSelectedPost(post);
+    if (!commentsByPost[post._id]) {
+      fetchComments(post._id);
+    }
+    setOpenCommentModal(true);
   };
 
   const handleCloseModal = () => {
@@ -110,6 +159,9 @@ const PostList = ({ posts, loading, users }) => {
       posts.forEach((post) => {
         if (!commentsByPost[post._id]) {
           fetchComments(post._id);
+        }
+        if (!likeByPost[post._id]) {
+          fetchLikes(post._id);
         }
       });
     }
@@ -124,7 +176,6 @@ const PostList = ({ posts, loading, users }) => {
         gap: '10px',
       }}
     >
-      {/* Liste des posts */}
       <Box sx={{ width: '60%' }}>
         {loading ? (
           <CircularProgress />
@@ -133,6 +184,8 @@ const PostList = ({ posts, loading, users }) => {
             {posts.map((post, index) => {
               const author = getAuthorDetails(post.author);
               const postComments = commentsByPost[post._id] || [];
+              const likesCount = likeByPost[post._id] || []; 
+             // const likedByUser = likeByPost[post.isLiked] || false; 
 
               const createdAt = post.createdAt
                 ? new Date(post.createdAt)
@@ -167,24 +220,13 @@ const PostList = ({ posts, loading, users }) => {
                       }}
                     >
                       <Avatar
-                        alt={
-                          author
-                            ? author.firstname + ' ' + author.lastname
-                            : 'Unknown Author'
-                        }
-                        src={
-                          author ? author.profilePicture : 'default-image-url'
-                        }
+                        alt={author ? author.firstname + ' ' + author.lastname : 'Unknown Author'}
+                        src={author ? author.profilePicture : 'default-image-url'}
                         sx={{ marginRight: 2 }}
                       />
                       <Box>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 'bold' }}
-                        >
-                          {author
-                            ? author.firstname + ' ' + author.lastname
-                            : 'Unknown Author'}
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                          {author ? author.firstname + ' ' + author.lastname : 'Unknown Author'}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
                           {relativeTime || 'Just now'}
@@ -218,41 +260,20 @@ const PostList = ({ posts, loading, users }) => {
                           ? new Date(comment.createdAt)
                           : null;
                         const relativeTimeComment = createdAtComment
-                          ? formatDistanceToNow(createdAtComment, {
-                              addSuffix: true,
-                            })
+                          ? formatDistanceToNow(createdAtComment, { addSuffix: true })
                           : '';
 
                         const author = comment.author;
                         return (
-                          <Box
-                            key={idx}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              marginBottom: 2,
-                              gap: 2,
-                            }}
-                          >
+                          <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', marginBottom: 2, gap: 2 }}>
                             <Avatar
-                              alt={
-                                author
-                                  ? `${author.firstname} ${author.lastname}`
-                                  : 'Unknown Author'
-                              }
-                              src={
-                                author?.profilePicture || 'default-image-url'
-                              }
+                              alt={author ? `${author.firstname} ${author.lastname}` : 'Unknown Author'}
+                              src={author?.profilePicture || 'default-image-url'}
                               sx={{ width: 36, height: 36 }}
                             />
                             <Box>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ fontWeight: 'bold' }}
-                              >
-                                {author
-                                  ? `${author.firstname} ${author.lastname}`
-                                  : 'Unknown Author'}
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                {author ? `${author.firstname} ${author.lastname}` : 'Unknown Author'}
                               </Typography>
                               <Typography variant="body2" color="textSecondary">
                                 {relativeTimeComment}
@@ -270,7 +291,11 @@ const PostList = ({ posts, loading, users }) => {
 
                     <CardActions sx={{ justifyContent: 'space-between' }}>
                       <Box>
-                        <IconButton color="error" aria-label="like">
+                        <IconButton
+                          color={post.isLiked ? 'error' : 'default'} 
+                          onClick={() => handleLikeToggle(post._id)}
+                          aria-label="like"
+                        >
                           <FavoriteIcon />
                         </IconButton>
                         <IconButton color="default" aria-label="share">
@@ -283,9 +308,7 @@ const PostList = ({ posts, loading, users }) => {
                         sx={{ cursor: 'pointer' }}
                         onClick={() => handleOpenModal(post)}
                       >
-                        {`${post.likes || 0} likes • ${
-                          postComments.length || 0
-                        } comments`}
+                        {`${likesCount.length} likes • ${postComments.length || 0} comments`}
                       </Typography>
                     </CardActions>
 
@@ -296,9 +319,7 @@ const PostList = ({ posts, loading, users }) => {
                         fullWidth
                         variant="outlined"
                         value={commentInput[post._id] || ''}
-                        onChange={(e) =>
-                          handleCommentChange(post._id, e.target.value)
-                        }
+                        onChange={(e) => handleCommentChange(post._id, e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             handleSubmitComment(post._id);
@@ -307,10 +328,7 @@ const PostList = ({ posts, loading, users }) => {
                         size="small"
                         InputProps={{
                           endAdornment: (
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleSubmitComment(post._id)}
-                            >
+                            <IconButton color="primary" onClick={() => handleSubmitComment(post._id)}>
                               <KeyboardArrowRightIcon />
                             </IconButton>
                           ),
@@ -346,20 +364,37 @@ const PostList = ({ posts, loading, users }) => {
             </IconButton>
           </Box>
           <Divider sx={{ my: 2 }} />
-          <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {selectedPost &&
-              commentsByPost[selectedPost._id]?.map((comment, idx) => (
-                <Box key={idx} sx={{ display: 'flex', marginBottom: 2 }}>
-                  <Avatar src={comment.author?.profilePicture} />
-                  <Box ml={2}>
-                    <Typography variant="subtitle2">{`${comment.author.firstname} ${comment.author.lastname}`}</Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {formatDistanceToNow(new Date(comment.createdAt))}
+          <Box sx={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            {commentsByPost[selectedPost?._id]?.map((comment, idx) => {
+              const createdAt = comment.createdAt
+                ? new Date(comment.createdAt)
+                : null;
+              const relativeTime = createdAt
+                ? formatDistanceToNow(createdAt, { addSuffix: true })
+                : '';
+
+              const author = comment.author;
+              return (
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, marginBottom: 2 }}>
+                  <Avatar
+                    alt={author ? `${author.firstname} ${author.lastname}` : 'Unknown Author'}
+                    src={author?.profilePicture || 'default-image-url'}
+                    sx={{ width: 36, height: 36 }}
+                  />
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                      {author ? `${author.firstname} ${author.lastname}` : 'Unknown Author'}
                     </Typography>
-                    <Typography>{comment.content}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {relativeTime}
+                    </Typography>
+                    <Typography variant="body1" sx={{ marginTop: 1 }}>
+                      {comment.content}
+                    </Typography>
                   </Box>
                 </Box>
-              ))}
+              );
+            })}
           </Box>
         </Box>
       </Modal>

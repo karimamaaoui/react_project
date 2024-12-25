@@ -10,30 +10,45 @@ import {
   Modal,
   Paper,
 } from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+
 import { MoreVert, Close } from '@mui/icons-material';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
 
 export default function Post({ post, authorName, profile }) {
-  const [like, setLike] = useState(post.like);
   const [isLiked, setIsLiked] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const [likeByPost, setLikeByPost] = useState({});
 
   useEffect(() => {
     fetchComments();
+    fetchLikes(post._id);
   }, []);
 
   const fetchComments = async () => {
     try {
       const response = await axios.get(
         `http://localhost:8000/comments/${post._id}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
+    }
+  };
+
+  const fetchLikes = async (postId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/likes/${postId}`,
+        { withCredentials: true },
+      );
+      setLikeByPost(response.data);
+    } catch (error) {
+      console.error('Error fetching likes:', error);
     }
   };
 
@@ -44,12 +59,11 @@ export default function Post({ post, authorName, profile }) {
       const response = await axios.post(
         `http://localhost:8000/comments/${post._id}`,
         { content: commentInput },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setComments((prevComments) => [...prevComments, response.data]);
       setCommentInput('');
       fetchComments();
-
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -60,9 +74,41 @@ export default function Post({ post, authorName, profile }) {
     ? formatDistanceToNow(createdAt, { addSuffix: true })
     : '';
 
-  const likeHandler = () => {
-    setLike(isLiked ? like - 1 : like + 1);
-    setIsLiked(!isLiked);
+  const handleLikeToggle = async (postId) => {
+    try {
+      // Check if the post is already liked by the user
+      const isLiked = likeByPost[postId]?.liked;
+
+      // If liked, remove the like, otherwise add it
+      if (isLiked) {
+        await axios.delete(`http://localhost:8000/likes/remove/${postId}`, {
+          withCredentials: true,
+        });
+      } else {
+        await axios.post(
+          `http://localhost:8000/likes/add/${postId}`,
+          {},
+          { withCredentials: true },
+        );
+      }
+
+      // After the like action, update the local state
+      setLikeByPost((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          liked: !isLiked, // Toggle the like status
+        },
+      }));
+
+      // Fetch updated likes after toggling
+      fetchLikes(postId);
+    } catch (error) {
+      console.error(
+        'Error toggling like:',
+        error.response?.data || error.message,
+      );
+    }
   };
 
   const toggleCommentsModal = () => {
@@ -70,6 +116,7 @@ export default function Post({ post, authorName, profile }) {
   };
 
   return (
+
     <Box
       sx={{
         width: '100%',
@@ -128,32 +175,19 @@ export default function Post({ post, authorName, profile }) {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton onClick={likeHandler}>
-            <img
-              src="assets/like.png"
-              alt="Like"
-              style={{
-                width: '24px',
-                height: '24px',
-                marginRight: '5px',
-                cursor: 'pointer',
-              }}
-            />
-          </IconButton>
-          <IconButton onClick={likeHandler}>
-            <img
-              src="assets/heart.png"
-              alt="Heart"
-              style={{
-                width: '24px',
-                height: '24px',
-                marginRight: '5px',
-                cursor: 'pointer',
-              }}
-            />
-          </IconButton>
+          <Box>
+            <IconButton
+              color={post.isLiked ? 'error' : 'default'}
+              onClick={() => handleLikeToggle(post._id)}
+              aria-label="like"
+            >
+              <FavoriteIcon />
+            </IconButton>
+          </Box>
+
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {like} people like it
+          {likeByPost.length} people like it
+
           </Typography>
         </Box>
         <Typography

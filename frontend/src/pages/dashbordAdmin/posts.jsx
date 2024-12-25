@@ -24,7 +24,6 @@ function Posts() {
         }
     };
 
-
     const fetchPosts = async () => {
       setLoading(true);
   
@@ -41,22 +40,16 @@ function Posts() {
       }
     };
   
-
-
-
-
-
-
-
     useEffect(() => {
       fetchPosts();
       fetchUsers();
     }, [auth.token, cookies.jwt]);
   
+    
     return (
       <>
         <PostFormModal fetchPosts={fetchPosts} />
-        <PostList posts={posts} loading={loading}  users={users}/>
+        <PostList  posts={posts} loading={loading}  users={users}/>
       </>
     );
   }
